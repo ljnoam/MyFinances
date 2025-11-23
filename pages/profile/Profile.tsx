@@ -6,8 +6,8 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Toggle } from '../../components/ui/Toggle';
-import { ChevronDownIcon, EditIcon } from '../../components/ui/Icons';
-import { Link } from 'react-router-dom';
+import { ChevronDownIcon, EditIcon, ChevronRightIcon } from '../../components/ui/Icons';
+import { Link, useNavigate } from 'react-router-dom';
 
 const AccordionItem = ({ title, children, isOpen, onClick }: { title: string, children: React.ReactNode, isOpen: boolean, onClick: () => void }) => {
   return (
@@ -32,6 +32,7 @@ export const Profile = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { settings, updateSettings, updateUserProfile, exportData, deleteAccount } = useSettings();
+  const navigate = useNavigate();
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -81,8 +82,20 @@ export const Profile = () => {
   const avatarSrc = previewUrl || settings.avatar_url || user.photoURL;
 
   return (
-    <div className="min-h-screen pb-32 pt-6 px-4 space-y-8 max-w-lg mx-auto">
+    <div className="min-h-screen pb-32 pt-6 px-4 space-y-6 max-w-lg mx-auto">
       
+      {/* 2.0 Header Navigation */}
+      <div className="flex items-center gap-4">
+        <button 
+            onClick={() => navigate('/')}
+            className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300"
+            aria-label="Retour"
+        >
+            <ChevronRightIcon className="w-6 h-6 rotate-180" />
+        </button>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Mon Profil</h1>
+      </div>
+
       {/* 2.1 Header Profil */}
       <div className="bg-card text-card-foreground rounded-2xl p-6 shadow-sm border border-border flex flex-col items-center text-center relative">
         <button 

@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -21,6 +21,11 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Configuration explicite de la persistance pour éviter les déconnexions
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error("Erreur lors de la configuration de la persistance :", error);
+});
 
 // Note: Analytics est souvent bloqué par les ad-blockers ou environnements sandbox
 // nous l'initialiserons conditionnellement si nécessaire dans le futur.

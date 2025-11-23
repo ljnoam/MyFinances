@@ -73,7 +73,7 @@ export const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-6 bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen flex flex-col justify-center items-center px-6 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Créer un compte</h1>
@@ -88,7 +88,6 @@ export const Register = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="dark:bg-slate-800 dark:text-white dark:border-slate-700"
           />
           
           <Input
@@ -98,7 +97,6 @@ export const Register = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="dark:bg-slate-800 dark:text-white dark:border-slate-700"
           />
           
           <Input
@@ -109,7 +107,6 @@ export const Register = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
-            className="dark:bg-slate-800 dark:text-white dark:border-slate-700"
           />
 
           <div className="space-y-3 pt-2">
@@ -117,7 +114,7 @@ export const Register = () => {
                 checked={acceptTerms}
                 onChange={(e) => setAcceptTerms(e.target.checked)}
                 label={
-                    <span>J'accepte les <Link to="/terms" className="text-indigo-600 hover:underline" target="_blank">CGU</Link> et la <Link to="/privacy" className="text-indigo-600 hover:underline" target="_blank">Politique de Confidentialité</Link>.</span>
+                    <span>J'accepte les <Link to="/terms" className="text-indigo-600 dark:text-indigo-400 hover:underline" target="_blank">CGU</Link> et la <Link to="/privacy" className="text-indigo-600 dark:text-indigo-400 hover:underline" target="_blank">Politique de Confidentialité</Link>.</span>
                 }
             />
              <Checkbox 
@@ -128,7 +125,7 @@ export const Register = () => {
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 text-sm rounded-lg border border-red-100 dark:border-red-900/30">
               {error}
             </div>
           )}
@@ -140,7 +137,7 @@ export const Register = () => {
 
         <p className="mt-8 text-center text-sm text-slate-600 dark:text-slate-400">
           Déjà un compte ?{' '}
-          <Link to="/login" className="text-indigo-600 font-semibold hover:underline">
+          <Link to="/login" className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">
             Se connecter
           </Link>
         </p>

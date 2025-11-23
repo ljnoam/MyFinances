@@ -19,8 +19,7 @@ export const Login = () => {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Redirection gérée par le composant de protection de route, 
-      // mais on peut forcer la navigation pour être sûr
+      // Redirection gérée par le composant de protection de route
       navigate('/');
     } catch (err: any) {
       console.error(err);
@@ -37,11 +36,11 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-6 bg-slate-50">
+    <div className="min-h-screen flex flex-col justify-center items-center px-6 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Bon retour !</h1>
-          <p className="text-slate-500">Connectez-vous pour gérer vos finances.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Bon retour !</h1>
+          <p className="text-slate-500 dark:text-slate-400">Connectez-vous pour gérer vos finances.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -64,14 +63,14 @@ export const Login = () => {
               required
             />
             <div className="flex justify-end">
-              <button type="button" className="text-xs text-indigo-600 font-medium">
+              <button type="button" className="text-xs text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
                 Mot de passe oublié ?
               </button>
             </div>
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 text-sm rounded-lg border border-red-100 dark:border-red-900/30">
               {error}
             </div>
           )}
@@ -81,9 +80,9 @@ export const Login = () => {
           </Button>
         </form>
 
-        <p className="mt-8 text-center text-sm text-slate-600">
+        <p className="mt-8 text-center text-sm text-slate-600 dark:text-slate-400">
           Pas encore de compte ?{' '}
-          <Link to="/register" className="text-indigo-600 font-semibold hover:underline">
+          <Link to="/register" className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">
             Créer un compte
           </Link>
         </p>

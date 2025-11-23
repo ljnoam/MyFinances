@@ -18,7 +18,8 @@ import { useAuth } from './authContext';
 
 // --- Types ---
 export type TransactionType = 'expense' | 'income';
-export type Category = 'Alimentation' | 'Transport' | 'Loisirs' | 'Logement' | 'Santé' | 'Salaire' | 'Autre' | 'Shopping';
+// On passe à un type string pour permettre les catégories personnalisées
+export type Category = string; 
 
 export interface Transaction {
   id: string;
@@ -60,6 +61,7 @@ interface DataContextType {
   savingsGoals: SavingsGoal[];
   budgets: Budget[];
   insights: Insight[];
+  categories: string[];
   loading: boolean;
   addTransaction: (t: Omit<Transaction, 'id'>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
@@ -67,6 +69,8 @@ interface DataContextType {
   addSavingsGoal: (g: Omit<SavingsGoal, 'id' | 'currentAmount'>) => Promise<void>;
   addToSavings: (id: string, amount: number) => Promise<void>;
   updateBudget: (category: string, limit: number) => Promise<void>;
+  addCategory: (category: string) => Promise<void>;
+  deleteCategory: (category: string) => Promise<void>;
   stats: {
     income: number;
     expense: number;
@@ -82,18 +86,22 @@ export const useData = () => {
   return context;
 };
 
+const DEFAULT_CATEGORIES = ['Alimentation', 'Transport', 'Loisirs', 'Logement', 'Santé', 'Salaire', 'Shopping', 'Autre'];
+
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, loading: authLoading } = useAuth();
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
   const [rawBudgets, setRawBudgets] = useState<{id: string, category: string, limit: number}[]>([]);
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   
   // Granular loading states
   const [isUserInitialized, setIsUserInitialized] = useState(false);
   const [txLoading, setTxLoading] = useState(true);
   const [goalsLoading, setGoalsLoading] = useState(true);
   const [budgetsLoading, setBudgetsLoading] = useState(true);
+  const [catsLoading, setCatsLoading] = useState(true);
 
   // 1. Initialize User Document (Sequence Start)
   useEffect(() => {
@@ -104,10 +112,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setTransactions([]);
       setSavingsGoals([]);
       setRawBudgets([]);
+      setCategories(DEFAULT_CATEGORIES);
       setIsUserInitialized(false);
       setTxLoading(true);
       setGoalsLoading(true);
       setBudgetsLoading(true);
+      setCatsLoading(true);
       return;
     }
 
@@ -117,8 +127,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const userRef = doc(db, 'users', user.uid);
       try {
         const snap = await getDoc(userRef);
-        // If doc doesn't exist, try to create it. 
-        // Note: This requires 'create' permission in rules.
         if (!snap.exists()) {
           await setDoc(userRef, { 
             email: user.email, 
@@ -128,14 +136,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (mounted) setIsUserInitialized(true);
       } catch (err: any) {
         console.error("Error initializing user:", err);
-        // If permission denied here, we stop the sequence to prevent further errors
-        // But we mark initialized as false so listeners don't fire
         if (err.code === 'permission-denied') {
-            // We force loading to false so the UI doesn't hang, but data will be empty
             if (mounted) {
                 setTxLoading(false);
                 setGoalsLoading(false);
                 setBudgetsLoading(false);
+                setCatsLoading(false);
             }
         }
       }
@@ -145,7 +151,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => { mounted = false; };
   }, [user, authLoading]);
 
-  // 2. Sync Transactions (Only after user init)
+  // 2. Sync Transactions
   useEffect(() => {
     if (!user || !isUserInitialized) return;
 
@@ -160,7 +166,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return {
           id: doc.id,
           ...data,
-          // Handle both Firestore Timestamp and serialized strings/Date objects
           date: data.date instanceof Timestamp ? data.date.toDate() : new Date(data.date)
         };
       }) as Transaction[];
@@ -168,7 +173,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setTxLoading(false);
     }, (err) => {
       console.error("Transactions listener error:", err);
-      setTxLoading(false); // Stop loading even on error
+      setTxLoading(false); 
     });
 
     return () => unsubscribe();
@@ -206,7 +211,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         })) as {id: string, category: string, limit: number}[];
         
         if (docs.length === 0 && !snapshot.metadata.fromCache) {
-             // Optional: Create defaults if empty
              const batch = writeBatch(db);
              const defaults = [
                  { category: 'Alimentation', limit: 400 },
@@ -218,7 +222,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  const ref = doc(db, 'users', user.uid, 'budgets', d.category);
                  batch.set(ref, d);
              });
-             // We catch this specifically to avoid crashing if write permission is missing
              try {
                 await batch.commit();
              } catch(e) { console.warn("Could not create default budgets", e); }
@@ -232,6 +235,36 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     return () => unsubscribe();
   }, [user, isUserInitialized]);
+
+  // 5. Sync Categories (Stored in settings doc)
+  useEffect(() => {
+    if (!user || !isUserInitialized) return;
+    const catsRef = doc(db, 'users', user.uid, 'settings', 'categories');
+    
+    const unsubscribe = onSnapshot(catsRef, async (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            if (data.list && Array.isArray(data.list)) {
+                setCategories(data.list);
+            }
+        } else {
+            // Create default if not exists
+            try {
+                await setDoc(catsRef, { list: DEFAULT_CATEGORIES });
+                setCategories(DEFAULT_CATEGORIES);
+            } catch (e) {
+                console.warn("Could not init categories", e);
+            }
+        }
+        setCatsLoading(false);
+    }, (err) => {
+        console.error("Categories fetch error", err);
+        setCatsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, isUserInitialized]);
+
 
   // --- CRUD Operations ---
 
@@ -278,11 +311,32 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateBudget = async (category: string, limit: number) => {
       if (!user) return;
-      await setDoc(doc(db, 'users', user.uid, 'budgets', category), {
-          category,
-          limit
-      });
+      if (limit < 0) {
+        // Implies deletion logic if handled by caller, but keeping clean update here.
+        // For deletion, use direct deleteDoc in component or separate method if needed.
+        // We will stick to standard setDoc which creates or overwrites.
+        await deleteDoc(doc(db, 'users', user.uid, 'budgets', category));
+      } else {
+        await setDoc(doc(db, 'users', user.uid, 'budgets', category), {
+            category,
+            limit
+        });
+      }
   };
+
+  const addCategory = async (category: string) => {
+      if (!user) return;
+      if (categories.includes(category)) return;
+      const newList = [...categories, category];
+      await setDoc(doc(db, 'users', user.uid, 'settings', 'categories'), { list: newList }, { merge: true });
+  };
+
+  const deleteCategory = async (category: string) => {
+      if (!user) return;
+      const newList = categories.filter(c => c !== category);
+      await setDoc(doc(db, 'users', user.uid, 'settings', 'categories'), { list: newList }, { merge: true });
+  };
+
 
   // --- ENGINE: Calculated Logic ---
 
@@ -389,22 +443,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
       }
 
-      if (currentDay > 1 && currentMonthTotal > lastMonthTotal * 1.5 && lastMonthTotal > 0) {
-          results.push({
-            id: 'spike-detect',
-            type: 'alert',
-            title: 'Pic de dépenses',
-            message: 'Vous avez déjà dépensé plus que tout le mois dernier !',
-            metric: 'Alerte',
-            date: now
-          });
-      }
-
       return results;
   }, [calculatedBudgets, transactions]);
 
   // Combined loading state
-  const globalLoading = authLoading || (user ? (txLoading || goalsLoading || budgetsLoading) : false);
+  const globalLoading = authLoading || (user ? (txLoading || goalsLoading || budgetsLoading || catsLoading) : false);
 
   return (
     <DataContext.Provider value={{
@@ -412,6 +455,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       savingsGoals,
       budgets: calculatedBudgets,
       insights,
+      categories,
       loading: globalLoading,
       addTransaction,
       deleteTransaction,
@@ -419,6 +463,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addSavingsGoal,
       addToSavings,
       updateBudget,
+      addCategory,
+      deleteCategory,
       stats
     }}>
       {children}

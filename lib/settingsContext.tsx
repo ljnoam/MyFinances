@@ -101,9 +101,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // 1. Upload Avatar if provided
     if (file) {
-      const storageRef = ref(storage, `avatars/${user.uid}.png`); // Always use png or detect mime
-      await uploadBytes(storageRef, file);
-      avatarUrl = await getDownloadURL(storageRef);
+      try {
+        // Utilisation du nom simple 'avatar' pour écraser l'ancien fichier et économiser de l'espace,
+        // ou ajout d'un timestamp pour éviter le cache. Ici on écrase mais on récupère la nouvelle URL.
+        const storageRef = ref(storage, `avatars/${user.uid}`); 
+        
+        await uploadBytes(storageRef, file, {
+            contentType: file.type // Important pour que le navigateur sache comment l'afficher (png, jpg, etc.)
+        });
+        
+        avatarUrl = await getDownloadURL(storageRef);
+      } catch (error) {
+        console.error("Erreur upload image", error);
+        throw new Error("Impossible d'uploader l'image");
+      }
     }
 
     // 2. Update Auth Profile (standard Firebase Auth)
@@ -111,12 +122,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       displayName: name, 
       photoURL: avatarUrl || user.photoURL 
     });
+    
+    // Forcer le rechargement de l'utilisateur pour mettre à jour l'UI Auth immédiatement
+    await user.reload();
 
     // 3. Update Firestore Settings (for persistence and custom fields)
     await updateSettings({
       display_name: name,
       avatar_url: avatarUrl
     });
+
+    // Mise à jour locale optimiste pour l'UI immédiate
+    setSettings(prev => prev ? ({ ...prev, display_name: name, avatar_url: avatarUrl }) : null);
   };
 
   const exportData = async () => {

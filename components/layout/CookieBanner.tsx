@@ -9,26 +9,37 @@ export const CookieBanner = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Logic:
-    // 1. If loading settings, wait.
-    // 2. If user logged in: Check Firestore (settings.cookie_consent).
-    // 3. If user NOT logged in: Check LocalStorage.
-    
-    if (loading && user) return;
-
+    // 1. Check LocalStorage FIRST (synchronous and immediate)
     const localConsent = localStorage.getItem('cookie_consent') === 'true';
-    const remoteConsent = settings?.cookie_consent === true;
+    if (localConsent) {
+      setIsVisible(false);
+      return;
+    }
 
-    if (user) {
-        if (!remoteConsent) setIsVisible(true);
-    } else {
-        if (!localConsent) setIsVisible(true);
+    // 2. If no local consent, wait for user settings loading
+    if (loading) return;
+
+    // 3. If user is logged in, check remote settings
+    if (user && settings) {
+       if (settings.cookie_consent) {
+           // If remote is true, sync local and hide
+           localStorage.setItem('cookie_consent', 'true');
+           setIsVisible(false);
+       } else {
+           // Remote is false/undefined, show banner
+           setIsVisible(true);
+       }
+    } else if (!user) {
+        // Not logged in and no local consent
+        setIsVisible(true);
     }
   }, [user, settings, loading]);
 
   const handleAccept = async () => {
-    await acceptCookies();
+    // Immediate UI feedback
     setIsVisible(false);
+    // Persist logic
+    await acceptCookies();
   };
 
   if (!isVisible) return null;

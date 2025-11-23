@@ -13,17 +13,23 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props 
 }) => {
-  const baseStyles = "w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex justify-center items-center active:scale-[0.98]";
+  // Base: iOS style press effect (scale down slightly), rounded-xl for modern feel
+  const baseStyles = "w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex justify-center items-center active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed";
   
   const variants = {
-    primary: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200",
-    secondary: "bg-slate-800 text-white hover:bg-slate-900",
-    outline: "border-2 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+    // Primary: Solid color, subtle standard shadow (no colored glow), hover darkens slightly
+    primary: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm active:opacity-90",
+    
+    // Secondary: Dark/Slate background, clean look
+    secondary: "bg-slate-800 text-white hover:bg-slate-900 shadow-sm",
+    
+    // Outline: Clean borders, standard background hover
+    outline: "border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
   };
 
   return (
     <button
-      className={`${baseStyles} ${variants[variant]} ${disabled || isLoading ? 'opacity-70 cursor-not-allowed' : ''} ${className}`}
+      className={`${baseStyles} ${variants[variant]} ${className}`}
       disabled={disabled || isLoading}
       {...props}
     >
