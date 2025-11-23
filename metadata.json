@@ -1,0 +1,5 @@
+{
+  "name": "MyFinance Tracker",
+  "description": "Une application de suivi financier mobile-first sécurisée avec Firebase.",
+  "requestFramePermissions": []
+}

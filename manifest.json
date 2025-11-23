@@ -1,0 +1,42 @@
+{
+  "name": "MyFinance Tracker",
+  "short_name": "MyFinance",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "description": "Suivez vos finances personnelles, transactions et budgets en temps réel.",
+  "icons": [
+    {
+      "src": "https://aistudiocdn.com/file/64-logo.png",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "https://aistudiocdn.com/file/192-icon.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://aistudiocdn.com/file/512-icon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nouvelle Transaction",
+      "short_name": "Ajouter",
+      "description": "Ajouter une dépense rapidement",
+      "url": "#/transactions",
+      "icons": [{ "src": "https://aistudiocdn.com/file/192-icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Voir Budget",
+      "short_name": "Budget",
+      "description": "Consulter mon budget",
+      "url": "#/insights",
+      "icons": [{ "src": "https://aistudiocdn.com/file/192-icon.png", "sizes": "192x192" }]
+    }
+  ]
+}
