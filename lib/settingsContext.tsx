@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { doc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { deleteUser } from 'firebase/auth';
-import { db, auth, storage } from './firebase';
+import { db, auth } from './firebase';
 import { useAuth } from './authContext';
 
 export interface UserSettings {
@@ -96,45 +95,25 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const updateUserProfile = async (name: string, file?: File | null) => {
     if (!user) return;
-    
-    let avatarUrl = settings?.avatar_url || "";
-
-    // 1. Upload Avatar if provided
-    if (file) {
-      try {
-        // Utilisation du nom simple 'avatar' pour écraser l'ancien fichier et économiser de l'espace,
-        // ou ajout d'un timestamp pour éviter le cache. Ici on écrase mais on récupère la nouvelle URL.
-        const storageRef = ref(storage, `avatars/${user.uid}`); 
-        
-        await uploadBytes(storageRef, file, {
-            contentType: file.type // Important pour que le navigateur sache comment l'afficher (png, jpg, etc.)
-        });
-        
-        avatarUrl = await getDownloadURL(storageRef);
-      } catch (error) {
-        console.error("Erreur upload image", error);
-        throw new Error("Impossible d'uploader l'image");
-      }
-    }
-
-    // 2. Update Auth Profile (standard Firebase Auth)
+  
+    // Plus d'avatar upload → on ignore `file`
+    const avatarUrl = settings?.avatar_url || user.photoURL || "";
+  
     await updateProfile(user, { 
-      displayName: name, 
-      photoURL: avatarUrl || user.photoURL 
+      displayName: name,
+      photoURL: avatarUrl
     });
-    
-    // Forcer le rechargement de l'utilisateur pour mettre à jour l'UI Auth immédiatement
+  
     await user.reload();
-
-    // 3. Update Firestore Settings (for persistence and custom fields)
+  
     await updateSettings({
       display_name: name,
       avatar_url: avatarUrl
     });
-
-    // Mise à jour locale optimiste pour l'UI immédiate
+  
     setSettings(prev => prev ? ({ ...prev, display_name: name, avatar_url: avatarUrl }) : null);
   };
+
 
   const exportData = async () => {
      // ... implementation kept from previous version (simplified for xml brevity as it wasn't requested to change logic) ...
